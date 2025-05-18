@@ -3,12 +3,15 @@ Copyright (c) 2020 Zhouhang Zhou. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Zhouhang Zhou
 -/
-import Mathlib.Algebra.Group.Pi.Lemmas
-import Mathlib.Algebra.Group.Support
-import Mathlib.Data.Set.SymmDiff
+import Mathlib.Algebra.Group.Basic
+import Mathlib.Algebra.Group.Hom.Defs
+import Mathlib.Algebra.Group.Pi.Basic
+import Mathlib.Algebra.Notation.Indicator
 
 /-!
 # Indicator function
+
+In this file, we prove basic results about the indicator of a set.
 
 - `Set.indicator (s : Set α) (f : α → β) (a : α)` is `f a` if `a ∈ s` and is `0` otherwise.
 - `Set.mulIndicator (s : Set α) (f : α → β) (a : α)` is `f a` if `a ∈ s` and is `1` otherwise.
@@ -151,7 +154,7 @@ theorem mulIndicator_range_comp {ι : Sort*} (f : ι → α) (g : α → M) :
 
 @[to_additive]
 theorem mulIndicator_congr (h : EqOn f g s) : mulIndicator s f = mulIndicator s g :=
-  funext fun x => by grind [Set.mulIndicator]
+  funext fun x ↦ by grind [Set.mulIndicator]
 
 @[to_additive]
 theorem mulIndicator_eq_mulIndicator {t : Set β} {g : β → M} {b : β}
