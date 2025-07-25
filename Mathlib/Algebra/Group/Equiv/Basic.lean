@@ -22,7 +22,7 @@ assert_not_exists Fintype
 
 open Function
 
-variable {F α β M M₁ M₂ N N₁ N₂ P Q G H : Type*}
+variable {F α β M M₁ M₂ M₃ N N₁ N₂ N₃ P Q G H : Type*}
 
 namespace EmbeddingLike
 variable [One M] [One N] [FunLike F M N] [EmbeddingLike F M N] [OneHomClass F M N]
@@ -82,7 +82,8 @@ def arrowCongr {M N P Q : Type*} [Mul P] [Mul Q] (f : M ≃ N) (g : P ≃* Q) :
   map_mul' h k := by ext; simp
 
 section monoidHomCongrEquiv
-variable [MulOneClass M] [MulOneClass M₁] [MulOneClass M₂] [Monoid N] [Monoid N₁] [Monoid N₂]
+variable [MulOneClass M] [MulOneClass M₁] [MulOneClass M₂] [MulOneClass M₃]
+  [Monoid N] [Monoid N₁] [Monoid N₂] [Monoid N₃]
 
 /-- The equivalence `(M₁ →* N) ≃ (M₂ →* N)` obtained by postcomposition with
 a multiplicative equivalence `e : M₁ ≃* M₂`. -/
@@ -105,6 +106,30 @@ def monoidHomCongrRightEquiv (e : N₁ ≃* N₂) : (M →* N₁) ≃ (M →* N�
   invFun := e.symm.toMonoidHom.comp
   left_inv f := by ext; simp
   right_inv f := by ext; simp
+
+@[to_additive (attr := simp)]
+lemma monoidHomCongrLeftEquiv_refl : monoidHomCongrLeftEquiv (.refl M) = .refl (M →* N) := rfl
+
+@[to_additive (attr := simp)]
+lemma monoidHomCongrRightEquiv_refl : monoidHomCongrRightEquiv (.refl N) = .refl (M →* N) := rfl
+
+@[to_additive (attr := simp)]
+lemma monoidHomCongrLeftEquiv_symm (e : M₁ ≃* M₂) :
+    monoidHomCongrLeftEquiv (N := N) e.symm = (monoidHomCongrLeftEquiv e).symm := rfl
+
+@[to_additive (attr := simp)]
+lemma monoidHomCongrRightEquiv_symm (e : N₁ ≃* N₂) :
+    monoidHomCongrRightEquiv (M := M) e.symm = (monoidHomCongrRightEquiv e).symm := rfl
+
+@[to_additive (attr := simp)]
+lemma monoidHomCongrLeftEquiv_trans (e₁₂ : M₁ ≃* M₂) (e₂₃ : M₂ ≃* M₃) :
+    monoidHomCongrLeftEquiv (N := N) (e₁₂.trans e₂₃) =
+      (monoidHomCongrLeftEquiv e₁₂).trans (monoidHomCongrLeftEquiv e₂₃) := rfl
+
+@[to_additive (attr := simp)]
+lemma monoidHomCongrRightEquiv_trans (e₁₂ : N₁ ≃* N₂) (e₂₃ : N₂ ≃* N₃) :
+    monoidHomCongrRightEquiv (M := M) (e₁₂.trans e₂₃) =
+      (monoidHomCongrRightEquiv e₁₂).trans (monoidHomCongrRightEquiv e₂₃) := rfl
 
 end monoidHomCongrEquiv
 
@@ -139,12 +164,8 @@ for multiplicative maps from a monoid to a commutative monoid.
   "An additive analogue of `Equiv.arrowCongr`,
   for additive maps from an additive monoid to a commutative additive monoid."]
 def monoidHomCongr {M N P Q} [MulOneClass M] [MulOneClass N] [CommMonoid P] [CommMonoid Q]
-    (f : M ≃* N) (g : P ≃* Q) : (M →* P) ≃* (N →* Q) where
-  toFun h := g.toMonoidHom.comp (h.comp f.symm.toMonoidHom)
-  invFun k := g.symm.toMonoidHom.comp (k.comp f.toMonoidHom)
-  left_inv h := by ext; simp
-  right_inv k := by ext; simp
-  map_mul' h k := by ext; simp
+    (f : M ≃* N) (g : P ≃* Q) : (M →* P) ≃* (N →* Q) :=
+  f.monoidHomCongrLeft.trans g.monoidHomCongrRight
 
 /-- A family of multiplicative equivalences `Π j, (Ms j ≃* Ns j)` generates a
 multiplicative equivalence between `Π j, Ms j` and `Π j, Ns j`.
