@@ -114,12 +114,12 @@ lemma monoidHomCongrLeftEquiv_refl : monoidHomCongrLeftEquiv (.refl M) = .refl (
 lemma monoidHomCongrRightEquiv_refl : monoidHomCongrRightEquiv (.refl N) = .refl (M →* N) := rfl
 
 @[to_additive (attr := simp)]
-lemma monoidHomCongrLeftEquiv_symm (e : M₁ ≃* M₂) :
-    monoidHomCongrLeftEquiv (N := N) e.symm = (monoidHomCongrLeftEquiv e).symm := rfl
+lemma symm_monoidHomCongrLeftEquiv (e : M₁ ≃* M₂) :
+    (monoidHomCongrLeftEquiv e).symm = monoidHomCongrLeftEquiv (N := N) e.symm := rfl
 
 @[to_additive (attr := simp)]
-lemma monoidHomCongrRightEquiv_symm (e : N₁ ≃* N₂) :
-    monoidHomCongrRightEquiv (M := M) e.symm = (monoidHomCongrRightEquiv e).symm := rfl
+lemma symm_monoidHomCongrRightEquiv (e : N₁ ≃* N₂) :
+    (monoidHomCongrRightEquiv e).symm = monoidHomCongrRightEquiv (M := M) e.symm := rfl
 
 @[to_additive (attr := simp)]
 lemma monoidHomCongrLeftEquiv_trans (e₁₂ : M₁ ≃* M₂) (e₂₃ : M₂ ≃* M₃) :
