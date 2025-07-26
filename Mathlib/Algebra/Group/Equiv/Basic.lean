@@ -134,8 +134,8 @@ lemma monoidHomCongrRightEquiv_trans (e₁₂ : N₁ ≃* N₂) (e₂₃ : N₂ 
 end monoidHomCongrEquiv
 
 section monoidHomCongr
-variable [MulOneClass M] [MulOneClass M₁] [MulOneClass M₂] [CommMonoid N] [CommMonoid N₁]
-  [CommMonoid N₂]
+variable [MulOneClass M] [MulOneClass M₁] [MulOneClass M₂] [MulOneClass M₃]
+  [CommMonoid N] [CommMonoid N₁] [CommMonoid N₂] [CommMonoid N₃]
 
 /-- The isomorphism `(M₁ →* N) ≃* (M₂ →* N)` obtained by postcomposition with
 a multiplicative equivalence `e : M₁ ≃* M₂`. -/
@@ -154,6 +154,30 @@ an additive equivalence `e : N₁ ≃+ N₂`."]
 def monoidHomCongrRight (e : N₁ ≃* N₂) : (M →* N₁) ≃* (M →* N₂) where
   __ := e.monoidHomCongrRightEquiv
   map_mul' f g := by ext; simp
+
+@[to_additive (attr := simp)]
+lemma monoidHomCongrLeft_refl : monoidHomCongrLeft (.refl M) = .refl (M →* N) := rfl
+
+@[to_additive (attr := simp)]
+lemma monoidHomCongrRight_refl : monoidHomCongrRight (.refl N) = .refl (M →* N) := rfl
+
+@[to_additive (attr := simp)]
+lemma symm_monoidHomCongrLeft (e : M₁ ≃* M₂) :
+    (monoidHomCongrLeft e).symm = monoidHomCongrLeft (N := N) e.symm := rfl
+
+@[to_additive (attr := simp)]
+lemma symm_monoidHomCongrRight (e : N₁ ≃* N₂) :
+    (monoidHomCongrRight e).symm = monoidHomCongrRight (M := M) e.symm := rfl
+
+@[to_additive (attr := simp)]
+lemma monoidHomCongrLeft_trans (e₁₂ : M₁ ≃* M₂) (e₂₃ : M₂ ≃* M₃) :
+    monoidHomCongrLeft (N := N) (e₁₂.trans e₂₃) =
+      (monoidHomCongrLeft e₁₂).trans (monoidHomCongrLeft e₂₃) := rfl
+
+@[to_additive (attr := simp)]
+lemma monoidHomCongrRight_trans (e₁₂ : N₁ ≃* N₂) (e₂₃ : N₂ ≃* N₃) :
+    monoidHomCongrRight (M := M) (e₁₂.trans e₂₃) =
+      (monoidHomCongrRight e₁₂).trans (monoidHomCongrRight e₂₃) := rfl
 
 end monoidHomCongr
 
