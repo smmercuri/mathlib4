@@ -120,7 +120,7 @@ lemma embDomain_add (f : ι ↪ F) (v w : ι →₀ M) :
 lemma single_add (a : ι) (b₁ b₂ : M) : single a (b₁ + b₂) = single a b₁ + single a b₂ :=
   (zipWith_single_single _ _ _ _ _).symm
 
-lemma single_add_apply (a : α) (m₁ m₂ : M) (b : α) :
+lemma single_add_apply (a : ι) (m₁ m₂ : M) (b : ι) :
     single a (m₁ + m₂) b = single a m₁ b + single a m₂ b := by simp
 
 lemma support_single_add {a : ι} {b : M} {f : ι →₀ M} (ha : a ∉ f.support) (hb : b ≠ 0) :
@@ -158,7 +158,7 @@ lemma update_eq_single_add_erase (f : ι →₀ M) (a : ι) (b : M) :
     ext j
     rcases eq_or_ne a j with (rfl | h)
     · simp
-    · simp [Function.update_of_ne h.symm, single_apply, h, erase_ne, h.symm]
+    · simp [h, erase_ne, h.symm]
 
 lemma update_eq_erase_add_single (f : ι →₀ M) (a : ι) (b : M) :
     f.update a b = f.erase a + single a b := by
@@ -166,7 +166,7 @@ lemma update_eq_erase_add_single (f : ι →₀ M) (a : ι) (b : M) :
     ext j
     rcases eq_or_ne a j with (rfl | h)
     · simp
-    · simp [Function.update_of_ne h.symm, single_apply, h, erase_ne, h.symm]
+    · simp [h, erase_ne, h.symm]
 
 lemma single_add_erase (a : ι) (f : ι →₀ M) : single a (f a) + f.erase a = f := by
   rw [← update_eq_single_add_erase, update_self]
