@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Michael Stoll
 -/
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Analysis.Normed.Ring.WithAbs
 
 /-!
 # Equivalence of real-valued absolute values
@@ -81,6 +82,9 @@ theorem IsEquiv.isNontrivial_iff {w : AbsoluteValue R S} (h : v.IsEquiv w) :
     v.IsNontrivial ↔ w.IsNontrivial :=
   not_iff_not.1 <| by aesop (add simp [not_isNontrivial_iff, h.eq_one_iff])
 alias ⟨IsEquiv.isNontrivial, _⟩ := IsEquiv.isNontrivial_iff
+
+def WithAbs.equiv₂ (v w : AbsoluteValue R S) : WithAbs v ≃+* WithAbs w :=
+    (WithAbs.equiv v).trans <| (WithAbs.equiv w).symm
 
 end OrderedSemiring
 
@@ -362,6 +366,76 @@ theorem isEquiv_iff_exists_rpow_eq {v w : AbsoluteValue F ℝ} :
       rpow_inv_log (v.pos hb₀) (h.eq_one_iff.not.2 hb₁), exp_one_rpow, exp_log (w.pos hb₀)]
   · exact ⟨1, zero_lt_one, funext fun x ↦ by rcases eq_or_ne x 0 with rfl | h₀ <;>
       aesop (add simp [h.isNontrivial_iff])⟩
+
+open scoped Topology
+
+theorem Metric.hasBasis_nhds_zero_lt {α : Type*} [PseudoMetricSpace α] (x : α) {R : ℝ}
+    (h : 0 < R) :
+    (𝓝 x).HasBasis (fun x ↦ 0 < x ∧ x < R) (Metric.ball x) := by
+  have := Metric.uniformity_basis_dist_lt (α := α) h
+  exact nhds_basis_uniformity this
+
+open Topology in
+theorem IsEquiv.isInducing_equiv₂ {v w : AbsoluteValue F ℝ} (h : v.IsEquiv w) :
+    IsInducing (WithAbs.equiv₂ v w) := by
+  rw [IsTopologicalAddGroup.isInducing_iff_nhds_zero]
+  ext U
+  rw [Metric.mem_nhds_iff, Filter.mem_comap]
+  constructor
+  · rintro ⟨ε, hε, hU⟩
+    simp [Metric.ball] at hU
+    use WithAbs.equiv₂ v w '' U
+    constructor
+    · rw [Metric.mem_nhds_iff]
+      rw [isEquiv_iff_exists_rpow_eq] at h
+      obtain ⟨c, hc, hvw⟩ := h
+      use ε ^ c
+      use Real.rpow_pos_of_pos hε _
+      intro x hx
+      simp at hx
+      rw [WithAbs.norm_eq_abv] at hx
+      rw [← funext_iff.1 hvw] at hx
+      rw [Real.rpow_lt_rpow_iff (v.nonneg _) (hε.le) hc] at hx
+      have : (WithAbs.equiv₂ v w).symm x ∈ {y : WithAbs v | ‖y‖ < ε} := by
+        simp
+        rw [WithAbs.norm_eq_abv]
+        simpa [WithAbs.equiv₂]
+      have := hU this
+      exact Set.mem_image_of_mem (⇑(WithAbs.equiv₂ v w)) (hU hx)
+    · rw [RingEquiv.image_eq_preimage]
+      rw [Set.preimage_preimage]
+      simp
+  · intro ⟨V, hV₁, hV₂⟩
+    rw [isEquiv_iff_exists_rpow_eq] at h
+    rw [Metric.mem_nhds_iff] at hV₁
+    obtain ⟨ε, hε, hV₃⟩ := hV₁
+    simp [Metric.ball] at hV₃ ⊢
+    obtain ⟨c, hc, hvw⟩ := h
+    use ε ^ (1 / c)
+    use Real.rpow_pos_of_pos hε _
+    intro x hx
+    simp at hx
+    rw [WithAbs.norm_eq_abv] at hx
+    rw [Real.lt_rpow_inv_iff_of_pos (v.nonneg _) hε.le hc] at hx
+    rw [funext_iff.1 hvw] at hx
+    have : (WithAbs.equiv₂ v w) x ∈ {y : WithAbs w | ‖y‖ < ε} := by
+      simp
+      rw [WithAbs.norm_eq_abv]
+      simpa [WithAbs.equiv₂]
+    have := hV₃ this
+    exact hV₂ (hV₃ hx)
+
+def IsEquiv.homeomorph {v w : AbsoluteValue F ℝ} (h : v.IsEquiv w) :
+    WithAbs v ≃ₜ WithAbs w where
+  __ := WithAbs.equiv₂ v w
+  continuous_toFun := h.isInducing_equiv₂.continuous
+  continuous_invFun := h.symm.isInducing_equiv₂.continuous
+
+lemma equiv_iff_isHomeomorph (v₁ v₂ : AbsoluteValue F ℝ) :
+    v₁.IsEquiv v₂ ↔ IsHomeomorph (WithAbs.equiv₂ v w) := by
+  constructor
+  · sorry
+  · sorry
 
 end Real
 
