@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Michael Stoll
 -/
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
-import Mathlib.Analysis.Normed.Ring.WithAbs
+import Mathlib.Analysis.Normed.Field.WithAbs
 
 /-!
 # Equivalence of real-valued absolute values
@@ -82,9 +82,6 @@ theorem IsEquiv.isNontrivial_iff {w : AbsoluteValue R S} (h : v.IsEquiv w) :
     v.IsNontrivial ↔ w.IsNontrivial :=
   not_iff_not.1 <| by aesop (add simp [not_isNontrivial_iff, h.eq_one_iff])
 alias ⟨IsEquiv.isNontrivial, _⟩ := IsEquiv.isNontrivial_iff
-
-def WithAbs.equiv₂ (v w : AbsoluteValue R S) : WithAbs v ≃+* WithAbs w :=
-    (WithAbs.equiv v).trans <| (WithAbs.equiv w).symm
 
 end OrderedSemiring
 
@@ -369,73 +366,44 @@ theorem isEquiv_iff_exists_rpow_eq {v w : AbsoluteValue F ℝ} :
 
 open scoped Topology
 
-theorem Metric.hasBasis_nhds_zero_lt {α : Type*} [PseudoMetricSpace α] (x : α) {R : ℝ}
-    (h : 0 < R) :
-    (𝓝 x).HasBasis (fun x ↦ 0 < x ∧ x < R) (Metric.ball x) := by
-  have := Metric.uniformity_basis_dist_lt (α := α) h
-  exact nhds_basis_uniformity this
+theorem IsEquiv.equivWithAbs_image_mem_nhds_zero (h : v.IsEquiv w) {U : Set (WithAbs v)}
+    (hU : U ∈ 𝓝 0) : WithAbs.equivWithAbs v w '' U ∈ 𝓝 0 := by
+  rw [Metric.mem_nhds_iff] at hU ⊢
+  obtain ⟨ε, hε, hU⟩ := hU
+  obtain ⟨c, hc, hvw⟩ := isEquiv_iff_exists_rpow_eq.1 h
+  refine ⟨ε ^ c, Real.rpow_pos_of_pos hε _, ?_⟩
+  intro x hx
+  rw [← RingEquiv.apply_symm_apply (WithAbs.equivWithAbs v w) x]
+  refine Set.mem_image_of_mem _ (hU ?_)
+  simp at hx
+  rw [WithAbs.norm_eq_abv, ← funext_iff.1 hvw, Real.rpow_lt_rpow_iff (v.nonneg _) hε.le hc] at hx
+  simpa
 
-open Topology in
-theorem IsEquiv.isInducing_equiv₂ {v w : AbsoluteValue F ℝ} (h : v.IsEquiv w) :
-    IsInducing (WithAbs.equiv₂ v w) := by
-  rw [IsTopologicalAddGroup.isInducing_iff_nhds_zero]
-  ext U
-  rw [Metric.mem_nhds_iff, Filter.mem_comap]
-  constructor
-  · rintro ⟨ε, hε, hU⟩
-    simp [Metric.ball] at hU
-    use WithAbs.equiv₂ v w '' U
-    constructor
-    · rw [Metric.mem_nhds_iff]
-      rw [isEquiv_iff_exists_rpow_eq] at h
-      obtain ⟨c, hc, hvw⟩ := h
-      use ε ^ c
-      use Real.rpow_pos_of_pos hε _
-      intro x hx
-      simp at hx
-      rw [WithAbs.norm_eq_abv] at hx
-      rw [← funext_iff.1 hvw] at hx
-      rw [Real.rpow_lt_rpow_iff (v.nonneg _) (hε.le) hc] at hx
-      have : (WithAbs.equiv₂ v w).symm x ∈ {y : WithAbs v | ‖y‖ < ε} := by
-        simp
-        rw [WithAbs.norm_eq_abv]
-        simpa [WithAbs.equiv₂]
-      have := hU this
-      exact Set.mem_image_of_mem (⇑(WithAbs.equiv₂ v w)) (hU hx)
-    · rw [RingEquiv.image_eq_preimage]
-      rw [Set.preimage_preimage]
-      simp
-  · intro ⟨V, hV₁, hV₂⟩
-    rw [isEquiv_iff_exists_rpow_eq] at h
-    rw [Metric.mem_nhds_iff] at hV₁
-    obtain ⟨ε, hε, hV₃⟩ := hV₁
-    simp [Metric.ball] at hV₃ ⊢
-    obtain ⟨c, hc, hvw⟩ := h
-    use ε ^ (1 / c)
-    use Real.rpow_pos_of_pos hε _
-    intro x hx
-    simp at hx
-    rw [WithAbs.norm_eq_abv] at hx
-    rw [Real.lt_rpow_inv_iff_of_pos (v.nonneg _) hε.le hc] at hx
-    rw [funext_iff.1 hvw] at hx
-    have : (WithAbs.equiv₂ v w) x ∈ {y : WithAbs w | ‖y‖ < ε} := by
-      simp
-      rw [WithAbs.norm_eq_abv]
-      simpa [WithAbs.equiv₂]
-    have := hV₃ this
-    exact hV₂ (hV₃ hx)
+open Topology IsTopologicalAddGroup in
+theorem IsEquiv.isEmbedding_equivWithAbs (h : v.IsEquiv w) :
+    IsEmbedding (WithAbs.equivWithAbs v w) := by
+  refine IsInducing.isEmbedding (isInducing_iff_nhds_zero.2 <| Filter.ext fun U ↦
+    ⟨fun hU ↦ ?_, fun hU ↦ ?_⟩)
+  · refine ⟨WithAbs.equivWithAbs v w '' U, h.equivWithAbs_image_mem_nhds_zero hU, ?_⟩
+    simp [RingEquiv.image_eq_preimage, Set.preimage_preimage]
+  · rw [← RingEquiv.coe_toEquiv, ← Filter.map_equiv_symm] at hU
+    obtain ⟨s, hs, hss⟩ := Filter.mem_map_iff_exists_image.1 hU
+    rw [← RingEquiv.coe_toEquiv_symm, WithAbs.equivWithAbs_symm] at hss
+    exact Filter.mem_of_superset (h.symm.equivWithAbs_image_mem_nhds_zero hs) hss
 
-def IsEquiv.homeomorph {v w : AbsoluteValue F ℝ} (h : v.IsEquiv w) :
-    WithAbs v ≃ₜ WithAbs w where
-  __ := WithAbs.equiv₂ v w
-  continuous_toFun := h.isInducing_equiv₂.continuous
-  continuous_invFun := h.symm.isInducing_equiv₂.continuous
+def IsEquiv.homeomorph (h : v.IsEquiv w) :
+    WithAbs v ≃ₜ WithAbs w := Equiv.toHomeomorphOfIsInducing _ h.isEmbedding_equivWithAbs.1
 
-lemma equiv_iff_isHomeomorph (v₁ v₂ : AbsoluteValue F ℝ) :
-    v₁.IsEquiv v₂ ↔ IsHomeomorph (WithAbs.equiv₂ v w) := by
-  constructor
-  · sorry
-  · sorry
+theorem isEquiv_iff_isHomeomorph (v₁ v₂ : AbsoluteValue F ℝ) :
+    v₁.IsEquiv v₂ ↔ IsHomeomorph (WithAbs.equivWithAbs v₁ v₂) := by
+  rw [isHomeomorph_iff_isEmbedding_surjective]
+  refine ⟨fun h ↦ ⟨h.isEmbedding_equivWithAbs, RingEquiv.surjective _⟩, fun ⟨hi, _⟩ ↦ ?_⟩
+  refine isEquiv_iff_lt_one_iff.2 fun x ↦ ?_
+  change v₁ (WithAbs.equiv v₁ <| (WithAbs.equiv v₁).symm x) < 1 ↔
+    v₂ (WithAbs.equiv v₂ <| (WithAbs.equiv v₂).symm x) < 1
+  simp_rw [← WithAbs.norm_eq_abv, ← tendsto_pow_atTop_nhds_zero_iff_norm_lt_one]
+  exact ⟨fun h ↦ by simpa using (hi.continuous.tendsto 0).comp h,
+    fun h ↦ by simpa using ((hi.continuous_iff.2 continuous_id).tendsto 0).comp h⟩
 
 end Real
 

@@ -51,6 +51,16 @@ instance instInhabited : Inhabited (WithAbs v) := ⟨0⟩
 /-- The canonical (semiring) equivalence between `WithAbs v` and `R`. -/
 def equiv : WithAbs v ≃+* R := RingEquiv.refl _
 
+def equivWithAbs (v w : AbsoluteValue R S) : WithAbs v ≃+* WithAbs w :=
+    (WithAbs.equiv v).trans <| (WithAbs.equiv w).symm
+
+def equivWithAbs_symm (v w : AbsoluteValue R S) : (equivWithAbs v w).symm = equivWithAbs w v := rfl
+
+@[simp]
+theorem equiv_equivWithAbs_symm_apply {v w : AbsoluteValue R S} {x : WithAbs w} :
+    WithAbs.equiv v ((WithAbs.equivWithAbs v w).symm x) = WithAbs.equiv w x := by
+  rfl
+
 end semiring
 
 section more_instances
