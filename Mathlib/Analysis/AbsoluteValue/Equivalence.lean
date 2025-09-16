@@ -305,7 +305,8 @@ section Real
 
 variable {F : Type*} [Field F] {v w : AbsoluteValue F ℝ}
 
-open Real in
+open Real
+
 theorem IsEquiv.log_div_log_pos (h : v.IsEquiv w) {a : F} (ha₀ : a ≠ 0) (ha₁ : w a ≠ 1) :
     0 < (w a).log / (v a).log := by
   rcases ha₁.lt_or_gt with hwa | hwa
@@ -313,7 +314,6 @@ theorem IsEquiv.log_div_log_pos (h : v.IsEquiv w) {a : F} (ha₀ : a ≠ 0) (ha�
       (neg_pos_of_neg <| log_neg (v.pos ha₀) (h.lt_one_iff.2 hwa))
   · exact div_pos (log_pos <| hwa) (log_pos (h.one_lt_iff.2 hwa))
 
-open Real in
 /--
 If $v$ and $w$ are two real absolute values on a field $F$, equivalent in the sense that
 $v(x) \leq v(y)$ if and only if $w(x) \leq w(y)$, then $\frac{\log (v(a))}{\log (w(a))}$ is
@@ -345,7 +345,6 @@ theorem IsEquiv.log_div_log_eq_log_div_log (h : v.IsEquiv w)
     ← one_lt_div (zpow_pos (by linarith) _), ← map_pow, ← map_zpow₀, ← map_div₀] at hq₂
   exact not_lt_of_gt (h.lt_one_iff.1 hq₁) hq₂
 
-open Real in
 /--
 If `v` and `w` are two real absolute values on a field `F`, then `v` and `w` are equivalent if
 and only if there exists a positive real constant `c` such that for all `x : R`, `(f x)^c = g x`.
@@ -371,39 +370,36 @@ theorem IsEquiv.equivWithAbs_image_mem_nhds_zero (h : v.IsEquiv w) {U : Set (Wit
   rw [Metric.mem_nhds_iff] at hU ⊢
   obtain ⟨ε, hε, hU⟩ := hU
   obtain ⟨c, hc, hvw⟩ := isEquiv_iff_exists_rpow_eq.1 h
-  refine ⟨ε ^ c, Real.rpow_pos_of_pos hε _, ?_⟩
-  intro x hx
+  refine ⟨ε ^ c, rpow_pos_of_pos hε _, fun x hx ↦ ?_⟩
   rw [← RingEquiv.apply_symm_apply (WithAbs.equivWithAbs v w) x]
   refine Set.mem_image_of_mem _ (hU ?_)
-  simp at hx
-  rw [WithAbs.norm_eq_abv, ← funext_iff.1 hvw, Real.rpow_lt_rpow_iff (v.nonneg _) hε.le hc] at hx
+  rw [Metric.mem_ball, dist_zero_right, WithAbs.norm_eq_abv, ← funext_iff.1 hvw,
+    rpow_lt_rpow_iff (v.nonneg _) hε.le hc] at hx
   simpa
 
 open Topology IsTopologicalAddGroup in
 theorem IsEquiv.isEmbedding_equivWithAbs (h : v.IsEquiv w) :
     IsEmbedding (WithAbs.equivWithAbs v w) := by
-  refine IsInducing.isEmbedding (isInducing_iff_nhds_zero.2 <| Filter.ext fun U ↦
-    ⟨fun hU ↦ ?_, fun hU ↦ ?_⟩)
-  · refine ⟨WithAbs.equivWithAbs v w '' U, h.equivWithAbs_image_mem_nhds_zero hU, ?_⟩
-    simp [RingEquiv.image_eq_preimage, Set.preimage_preimage]
+  refine IsInducing.isEmbedding <| isInducing_iff_nhds_zero.2 <| Filter.ext fun U ↦
+    ⟨fun hU ↦ ?_, fun hU ↦ ?_⟩
+  · exact ⟨WithAbs.equivWithAbs v w '' U, h.equivWithAbs_image_mem_nhds_zero hU,
+      by simp [RingEquiv.image_eq_preimage, Set.preimage_preimage]⟩
   · rw [← RingEquiv.coe_toEquiv, ← Filter.map_equiv_symm] at hU
     obtain ⟨s, hs, hss⟩ := Filter.mem_map_iff_exists_image.1 hU
     rw [← RingEquiv.coe_toEquiv_symm, WithAbs.equivWithAbs_symm] at hss
     exact Filter.mem_of_superset (h.symm.equivWithAbs_image_mem_nhds_zero hs) hss
 
-def IsEquiv.homeomorph (h : v.IsEquiv w) :
-    WithAbs v ≃ₜ WithAbs w := Equiv.toHomeomorphOfIsInducing _ h.isEmbedding_equivWithAbs.1
-
-theorem isEquiv_iff_isHomeomorph (v₁ v₂ : AbsoluteValue F ℝ) :
-    v₁.IsEquiv v₂ ↔ IsHomeomorph (WithAbs.equivWithAbs v₁ v₂) := by
+theorem isEquiv_iff_isHomeomorph (v w : AbsoluteValue F ℝ) :
+    v.IsEquiv w ↔ IsHomeomorph (WithAbs.equivWithAbs v w) := by
   rw [isHomeomorph_iff_isEmbedding_surjective]
   refine ⟨fun h ↦ ⟨h.isEmbedding_equivWithAbs, RingEquiv.surjective _⟩, fun ⟨hi, _⟩ ↦ ?_⟩
   refine isEquiv_iff_lt_one_iff.2 fun x ↦ ?_
-  change v₁ (WithAbs.equiv v₁ <| (WithAbs.equiv v₁).symm x) < 1 ↔
-    v₂ (WithAbs.equiv v₂ <| (WithAbs.equiv v₂).symm x) < 1
+  conv_lhs => rw [← (WithAbs.equiv v).apply_symm_apply x]
+  conv_rhs => rw [← (WithAbs.equiv w).apply_symm_apply x]
   simp_rw [← WithAbs.norm_eq_abv, ← tendsto_pow_atTop_nhds_zero_iff_norm_lt_one]
-  exact ⟨fun h ↦ by simpa using (hi.continuous.tendsto 0).comp h,
-    fun h ↦ by simpa using ((hi.continuous_iff.2 continuous_id).tendsto 0).comp h⟩
+  exact ⟨fun h ↦ by simpa [Function.comp_def] using (hi.continuous.tendsto 0).comp h, fun h ↦ by
+    simpa [Function.comp_def] using (hi.continuous_iff (f := (WithAbs.equivWithAbs v w).symm)).2
+      continuous_id |>.tendsto 0 |>.comp h ⟩
 
 end Real
 

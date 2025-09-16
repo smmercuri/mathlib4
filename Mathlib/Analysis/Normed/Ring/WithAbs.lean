@@ -57,9 +57,12 @@ def equivWithAbs (v w : AbsoluteValue R S) : WithAbs v ≃+* WithAbs w :=
 def equivWithAbs_symm (v w : AbsoluteValue R S) : (equivWithAbs v w).symm = equivWithAbs w v := rfl
 
 @[simp]
-theorem equiv_equivWithAbs_symm_apply {v w : AbsoluteValue R S} {x : WithAbs w} :
-    WithAbs.equiv v ((WithAbs.equivWithAbs v w).symm x) = WithAbs.equiv w x := by
-  rfl
+theorem equivWithAbs_equiv_symm_apply {v w : AbsoluteValue R S} {x : R} :
+    equivWithAbs v w ((equiv v).symm x) = (equiv w).symm x := rfl
+
+@[simp]
+theorem equivWithAbs_symm_equiv_symm_apply {v w : AbsoluteValue R S} {x : R} :
+    (equivWithAbs v w).symm ((equiv w).symm x) = (equiv v).symm x := rfl
 
 end semiring
 
