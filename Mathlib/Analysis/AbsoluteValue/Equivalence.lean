@@ -375,7 +375,7 @@ theorem IsEquiv.equivWithAbs_image_mem_nhds_zero (h : v.IsEquiv w) {U : Set (Wit
   refine Set.mem_image_of_mem _ (hU ?_)
   rw [Metric.mem_ball, dist_zero_right, WithAbs.norm_eq_abv, ← funext_iff.1 hvw,
     rpow_lt_rpow_iff (v.nonneg _) hε.le hc] at hx
-  simpa
+  simpa [WithAbs.norm_eq_abv]
 
 open Topology IsTopologicalAddGroup in
 theorem IsEquiv.isEmbedding_equivWithAbs (h : v.IsEquiv w) :

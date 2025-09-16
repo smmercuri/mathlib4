@@ -57,6 +57,10 @@ def equivWithAbs (v w : AbsoluteValue R S) : WithAbs v ≃+* WithAbs w :=
 def equivWithAbs_symm (v w : AbsoluteValue R S) : (equivWithAbs v w).symm = equivWithAbs w v := rfl
 
 @[simp]
+theorem equiv_equivWithAbs_symm_apply {v w : AbsoluteValue R S} {x : WithAbs w} :
+    equiv v ((equivWithAbs v w).symm x) = equiv w x := rfl
+
+@[simp]
 theorem equivWithAbs_equiv_symm_apply {v w : AbsoluteValue R S} {x : R} :
     equivWithAbs v w ((equiv v).symm x) = (equiv w).symm x := rfl
 
