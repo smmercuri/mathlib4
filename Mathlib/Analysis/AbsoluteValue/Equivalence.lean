@@ -15,6 +15,8 @@ positive real number `c` such that `v₁ x ^ c = v₂ x` for all `x : R`.
 
 namespace AbsoluteValue
 
+open Topology
+
 section OrderedSemiring
 
 variable {R : Type*} [Semiring R] {S : Type*} [Semiring S] [PartialOrder S]
@@ -151,159 +153,6 @@ theorem exists_one_lt_lt_one_of_not_isEquiv {v w : AbsoluteValue R S} (hv : v.Is
 
 end LinearOrderedSemifield
 
-section LinearOrderedField
-
-open Filter
-open scoped Topology
-
-variable {R S : Type*} [Field R] [Field S] [LinearOrder S] {v w : AbsoluteValue R S}
-  [TopologicalSpace S] [IsStrictOrderedRing S] [Archimedean S] [_i : OrderTopology S]
-
-/--
-The limit $v\left(\frac{1}{1 + a ^ n}\right)\to 1$, for an absolute value $v$ on a field
-$F$ if $v(a) < 1$.
--/
-private theorem tendsto_div_one_add_pow_nhds_one {v : AbsoluteValue R S} {a : R} (ha : v a < 1) :
-    atTop.Tendsto (fun (n : ℕ) ↦ v (1 / (1 + a ^ n))) (𝓝 1) := by
-  simp_rw [map_div₀ v, v.map_one]
-  apply one_div_one (G := S) ▸ Tendsto.div tendsto_const_nhds _ one_ne_zero
-  have h_add := tendsto_pow_atTop_nhds_zero_of_lt_one (v.nonneg _) ha |>.const_add (1 : S)
-  have h_sub := tendsto_pow_atTop_nhds_zero_of_lt_one (v.nonneg _) ha |>.const_sub 1
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le (by simpa using h_sub) (by simpa using h_add)
-    (fun n ↦ le_trans (by rw [map_one, map_pow]) (v.le_add _ _))
-    (fun n ↦ le_trans (v.add_le _ _) (by rw [map_one, map_pow]))
-
-/--
-The limit $v \left(\frac{1}{1 + a ^ n}\right)\to 0$, for an absolute value $v$ on a field
-$F$ if $1 < v(a)$.
--/
-private theorem tendsto_pow_div_one_add_pow_zero {v : AbsoluteValue R S} {a : R} (ha : 1 < v a) :
-    Filter.Tendsto (fun (n : ℕ) ↦ v (1 / (1 + a ^ n))) Filter.atTop (𝓝 0) := by
-  simp_rw [div_eq_mul_inv, one_mul, map_inv₀, fun n ↦ add_comm 1 (a ^ n)]
-  refine (tendsto_atTop_mono (fun n ↦ v.le_add _ _) ?_).inv_tendsto_atTop
-  simpa using tendsto_atTop_add_right_of_le _ _ (tendsto_pow_atTop_atTop_of_one_lt ha)
-    (fun _ ↦ le_rfl) |>.congr fun n ↦ (sub_eq_add_neg (v a ^ n) 1).symm
-
-variable {ι : Type*} [Fintype ι] [DecidableEq ι] {v : ι → AbsoluteValue R S}
-  {w : AbsoluteValue R S} {a b : R} {i : ι}
-
-/--
-- `v i, w`: absolute values on a field $R$.
-- `v i` is inequivalent to `v j` for all `j ≠ i` via the divergent point `a : R`.
-- `v i` is inequivalent to `w` via the divergent point `b : R`.
-- `w a = 1`.
-
-Then there is a common divergent point `k` causing both `v i` and `w` to be inequivalent to
-each `v j` for `j ≠ i`
--/
-private theorem exists_one_lt_lt_one_pi_of_eq_one (ha : 1 < v i a) (haj : ∀ j ≠ i, v j a < 1)
-    (haw : w a = 1) (hb : 1 < v i b) (hbw : w b < 1) :
-    ∃ k : R, 1 < v i k ∧ (∀ j ≠ i, v j k < 1) ∧ w k < 1 := by
-  let c : ℕ → R := fun n ↦ a ^ n * b
-  have hcᵢ : Tendsto (fun n ↦ (v i) (c n)) atTop atTop := by
-    simpa [c] using Tendsto.atTop_mul_const (by linarith) (tendsto_pow_atTop_atTop_of_one_lt ha)
-  have hcⱼ (j : ι) (hj : j ≠ i) : Tendsto (fun n ↦ (v j) (c n)) atTop (𝓝 0) := by
-    simpa [c] using tendsto_pow_atTop_nhds_zero_of_lt_one ((v j).nonneg _) (haj j hj) |>.mul_const _
-  simp_rw [_i.topology_eq_generate_intervals, TopologicalSpace.tendsto_nhds_generateFrom_iff,
-    mem_atTop_sets, Set.mem_preimage] at hcⱼ
-  choose r₁ hr₁ using tendsto_atTop_atTop.1 hcᵢ 2
-  choose rₙ hrₙ using fun j hj ↦ hcⱼ j hj (.Iio 1) (by simpa using ⟨1, .inr rfl⟩) (by simp)
-  let r := Finset.univ.sup fun j ↦ if h : j = i then r₁ else rₙ j h
-  refine ⟨c r, lt_of_lt_of_le (by linarith) (hr₁ r ?_), fun j hj ↦ ?_, by simpa [c, haw]⟩
-  · exact Finset.le_sup_dite_pos (p := fun j ↦ j = i) (f := fun _ _ ↦ r₁) (Finset.mem_univ _) rfl
-  · simpa using hrₙ j hj _ <| Finset.le_sup_dite_neg (fun j ↦ j = i) (Finset.mem_univ j) _
-
-/--
-- `v i, w`: absolute values on `R`.
-- `v i` is inequivalent to `v j` for all `j ≠ i` via the divergent point `a : R`.
-- `v i` is inequivalent to `w` via the divergent point `b : R`.
-- `1 < w a`.
-
-Then there is a common divergent point `k : R` causing both `v i` and `w` to be inequivalent to
-each `v j` for `j ≠ i`.
--/
-private theorem exists_one_lt_lt_one_pi_of_one_lt (ha : 1 < v i a) (haj : ∀ j ≠ i, v j a < 1)
-    (haw : 1 < w a) (hb : 1 < v i b) (hbw : w b < 1) :
-    ∃ k : R, 1 < v i k ∧ (∀ j ≠ i, v j k < 1) ∧ w k < 1 := by
-  let c : ℕ → R := fun n ↦ 1 / (1 + a⁻¹ ^ n) * b
-  have hcᵢ : Tendsto (fun n ↦ v i (c n)) atTop (𝓝 (v i b)) := by
-    have : v i a⁻¹ < 1 := map_inv₀ (v i) a ▸ inv_lt_one_of_one_lt₀ ha
-    simpa [c] using (tendsto_div_one_add_pow_nhds_one this).mul_const (v i b)
-  have hcⱼ (j : ι) (hj : j ≠ i) : atTop.Tendsto (fun n ↦ v j (c n)) (𝓝 0) := by
-    have : 1 < v j a⁻¹ := map_inv₀ (v j) _ ▸
-      (one_lt_inv₀ <| (v j).pos fun h ↦ by linarith [map_zero (v _) ▸ h ▸ ha]).2 (haj j hj)
-    simpa [c] using (tendsto_pow_div_one_add_pow_zero this).mul_const _
-  have hcₙ : atTop.Tendsto (fun n ↦ w (c n)) (𝓝 (w b)) := by
-    have : w a⁻¹ < 1 := map_inv₀ w _ ▸ inv_lt_one_of_one_lt₀ haw
-    simpa [c] using (tendsto_div_one_add_pow_nhds_one this).mul_const (w b)
-  simp_rw [_i.topology_eq_generate_intervals, TopologicalSpace.tendsto_nhds_generateFrom_iff,
-    mem_atTop_sets, Set.mem_preimage] at hcⱼ
-  choose r₁ hr₁ using Filter.eventually_atTop.1 <| Filter.Tendsto.eventually_const_lt hb hcᵢ
-  choose rₙ hrₙ using fun j hj ↦ hcⱼ j hj (.Iio 1) (by simpa using ⟨1, .inr rfl⟩) (by simp)
-  choose rN hrN using Filter.eventually_atTop.1 <| Filter.Tendsto.eventually_lt_const hbw hcₙ
-  let r := max (Finset.univ.sup fun j ↦ if h : j = i then r₁ else rₙ j h) rN
-  refine ⟨c r, hr₁ r ?_, fun j hj ↦ ?_, ?_⟩
-  · exact le_max_iff.2 <| .inl <|
-      Finset.le_sup_dite_pos (p := fun j ↦ j = i) (f := fun _ _ ↦ r₁) (Finset.mem_univ _) rfl
-  · exact hrₙ j hj _ <| le_max_iff.2 <| Or.inl <|
-      Finset.le_sup_dite_neg (fun j ↦ j = i) (Finset.mem_univ j) _
-  · exact hrN _ <| le_max_iff.2 (.inr le_rfl)
-
-theorem _root_.Fintype.card_subtype_or_eq {α : Type*} [Fintype α] [DecidableEq α] {a b : α}
-    (h : a ≠ b) : Fintype.card { c : α // c = a ∨ c = b } = 2 := by
-  simpa using Fintype.card_subtype_or_disjoint _ _ <| fun p hpa hpb ↦
-    le_bot_iff.2 <| funext fun c ↦ by simpa using fun hpc ↦ h (hpa _ hpc ▸ hpb _ hpc)
-
-open Fintype Subtype in
-/--
-If `v : ι → AbsoluteValue R S` is a finite collection of non-trivial and pairwise inequivalent
-absolute values, then for any `v i` there is some `a : R` such that `1 < v i a` while all other
-`v j a < 1`.
--/
-theorem exists_one_lt_lt_one_pi_of_not_isEquiv (h : ∀ i, (v i).IsNontrivial)
-    (hv : Pairwise fun i j ↦ ¬(v i).IsEquiv (v j)) :
-    ∀ i, ∃ (a : R), 1 < v i a ∧ ∀ j ≠ i, v j a < 1 := by
-  let P (ι : Type u_3) [Fintype ι] : Prop := [DecidableEq ι] →
-    ∀ v : ι → AbsoluteValue R S, (∀ i, (v i).IsNontrivial) →
-      (Pairwise fun i j ↦ ¬(v i).IsEquiv (v j)) → ∀ i, ∃ (a : R), 1 < v i a ∧ ∀ j ≠ i, v j a < 1
-  -- Use strong induction on the index
-  revert hv h; refine induction_subsingleton_or_nontrivial (P := P) ι (fun ι _ _ _ v h hv i ↦ ?_)
-    (fun ι _ _ ih _ v h hv i ↦ ?_) v
-  · -- If `ι` is trivial this follows immediately from `(v i).IsNontrivial`
-    let ⟨a, ha⟩ := (h i).exists_abv_gt_one
-    exact ⟨a, ha, fun j hij ↦ absurd (Subsingleton.elim i j) hij.symm⟩
-  · rcases eq_or_ne (card ι) 2 with (hc | hc)
-    · -- If `ι` has two elements this is `exists_one_lt_lt_one_of_not_isEquiv`
-      let ⟨j, hj⟩ := (Nat.card_eq_two_iff' i).1 <| card_eq_nat_card ▸ hc
-      let ⟨a, ha⟩ := (v i).exists_one_lt_lt_one_of_not_isEquiv (h i) (h j) (hv hj.1.symm)
-      exact ⟨a, ha.1, fun _ h ↦ hj.2 _ h ▸ ha.2⟩
-    have hlt : 2 < card ι := Nat.lt_of_le_of_ne (one_lt_card_iff_nontrivial.2 ‹_›) hc.symm
-    -- Choose another distinguished index `j ≠ i`
-    let ⟨j, hj⟩ := exists_ne i
-    -- Apply induction first the subcollection `v i` for `i ≠ j`
-    let ⟨a, ha⟩ := ih {k : ι // k ≠ j} (card_subtype_lt fun a ↦ a rfl) (restrict _ v)
-      (fun i ↦ h _) (hv.comp_of_injective val_injective) ⟨i, hj.symm⟩
-    -- Then apply induction next to the subcollection `v i, v k`.
-    let ⟨b, hb⟩ := ih {k : ι // k = i ∨ k = j} (by linarith [card_subtype_or_eq hj.symm])
-      (restrict _ v) (fun _ ↦ h _) (hv.comp_of_injective val_injective) ⟨i, .inl rfl⟩
-    rcases eq_or_ne (v j a) 1 with (ha₁ | ha₁)
-    · -- If `v j a = 1` then use the sequence `a ^ n * b` in the applied lemma
-      let ⟨c, hc⟩ := exists_one_lt_lt_one_pi_of_eq_one ha.1 ha.2 ha₁ hb.1 (hb.2 ⟨j, .inr rfl⟩
-        (coe_ne_coe.1 hj))
-      refine ⟨c, hc.1, fun k hk ↦ ?_⟩
-      rcases eq_or_ne k j with (rfl | h); try exact hc.2.2; exact hc.2.1 ⟨k, h⟩ (coe_ne_coe.1 hk)
-    rcases ha₁.lt_or_gt with (ha_lt | ha_gt)
-    · -- If `v j a < 1` then `a` works
-      refine ⟨a, ha.1, fun k hk ↦ ?_⟩
-      rcases eq_or_ne k j with (rfl | h); try exact ha_lt; exact ha.2 ⟨k, h⟩ (by simpa using hk)
-    · -- If `1 < v j a` then use the sequence `b / (1 + a ^ (-n))` in the applied lemma
-      let ⟨c, hc⟩ := exists_one_lt_lt_one_pi_of_one_lt ha.1 ha.2 ha_gt hb.1 (hb.2 ⟨j, .inr rfl⟩
-        (coe_ne_coe.1 hj))
-      refine ⟨c, hc.1, fun k hk ↦ ?_⟩
-      rcases eq_or_ne k j with (rfl | h); try exact hc.2.2; exact hc.2.1 ⟨k, h⟩ (coe_ne_coe.1 hk)
-
-end LinearOrderedField
-
 section Real
 
 variable {F : Type*} [Field F] {v w : AbsoluteValue F ℝ}
@@ -364,9 +213,7 @@ theorem isEquiv_iff_exists_rpow_eq {v w : AbsoluteValue F ℝ} :
     rw [← h.symm.log_div_log_eq_log_div_log ha₀ ha₁ hb₀ hb₁, div_eq_inv_mul, rpow_mul (v.nonneg _),
       rpow_inv_log (v.pos hb₀) (h.eq_one_iff.not.2 hb₁), exp_one_rpow, exp_log (w.pos hb₀)]
   · exact ⟨1, zero_lt_one, funext fun x ↦ by rcases eq_or_ne x 0 with rfl | h₀ <;>
-      aesop (add simp [h.isNontrivial_iff])⟩
-
-open scoped Topology
+      aesop (add simp [h.isNontrivial_congr])⟩
 
 theorem IsEquiv.equivWithAbs_image_mem_nhds_zero (h : v.IsEquiv w) {U : Set (WithAbs v)}
     (hU : U ∈ 𝓝 0) : WithAbs.equivWithAbs v w '' U ∈ 𝓝 0 := by
