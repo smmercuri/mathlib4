@@ -39,11 +39,25 @@ noncomputable instance normedField (v : AbsoluteValue R ℝ) : NormedField (With
   letI := v.toNormedField
   (equiv v).normedField
 
-instance [Module R T] [FiniteDimensional R T] : FiniteDimensional (WithAbs v) T :=
+instance instFiniteDimensionalLeft [Module R T] [FiniteDimensional R T] :
+    FiniteDimensional (WithAbs v) T :=
   Module.Finite.of_restrictScalars_finite R (WithAbs v) T
 
-instance [Algebra R T] [Algebra.IsSeparable R T] : Algebra.IsSeparable (WithAbs v) T :=
+@[deprecated  (since := "2026-01-29")] alias instFiniteDimensional := instFiniteDimensionalLeft
+
+instance instFiniteDimensionalRight [Module T R] [FiniteDimensional T R] :
+    FiniteDimensional T (WithAbs v) :=
+  Module.Finite.equiv (linearEquiv T v).symm
+
+instance instIsSeparableLeft [Algebra R T] [Algebra.IsSeparable R T] :
+    Algebra.IsSeparable (WithAbs v) T :=
   .of_equiv_equiv (equiv v).symm (.refl T) (by ext; simp [algebraMap_left_apply])
+
+@[deprecated  (since := "2026-01-29")] alias instIsSeparable := instIsSeparableLeft
+
+instance instIsSeparableRight [Algebra T R] [Algebra.IsSeparable T R] :
+    Algebra.IsSeparable T (WithAbs v) :=
+  .of_equiv_equiv (.refl T) (equiv v).symm (by ext; simp [algebraMap_right_apply])
 
 @[simp] lemma toAbs_div (x y : R) : toAbs v (x / y) = toAbs v x / toAbs v y := rfl
 @[simp] lemma ofAbs_div (x y : WithAbs v) : ofAbs (x / y) = ofAbs x / ofAbs y := rfl
