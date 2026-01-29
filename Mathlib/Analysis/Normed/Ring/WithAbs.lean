@@ -164,7 +164,7 @@ section comm_semiring
 
 variable [CommSemiring R] (v : AbsoluteValue R S)
 
-instance instCommSemiring : CommSemiring (WithAbs v) := (equiv v).commSemiring
+instance instCommSemiring : CommSemiring (WithAbs v) := fast_instance% (equiv v).commSemiring
 
 end comm_semiring
 
@@ -172,11 +172,11 @@ section ring
 
 variable [Ring R]
 
-instance instRing (v : AbsoluteValue R S) : Ring (WithAbs v) := (equiv v).ring
+instance instRing (v : AbsoluteValue R S) : Ring (WithAbs v) := fast_instance% (equiv v).ring
 
 noncomputable instance normedRing (v : AbsoluteValue R ℝ) : NormedRing (WithAbs v) :=
   letI := v.toNormedRing
-  (equiv v).normedRing
+  fast_instance% (equiv v).normedRing
 
 lemma norm_eq_abv (v : AbsoluteValue R ℝ) (x : WithAbs v) : ‖x‖ = v (WithAbs.equiv v x) := rfl
 lemma norm_eq_abv' (v : AbsoluteValue R ℝ) (x : R) : ‖(WithAbs.equiv v).symm x‖ = v x := rfl
@@ -195,7 +195,7 @@ section comm_ring
 
 variable [CommRing R] (v : AbsoluteValue R S)
 
-instance instCommRing : CommRing (WithAbs v) := (equiv v).commRing
+instance instCommRing : CommRing (WithAbs v) := fast_instance% (equiv v).commRing
 
 end comm_ring
 
@@ -212,8 +212,7 @@ theorem smul_left_def [SMul R T] (x : WithAbs v) (t : T) :
 instance instFaithfulSMulLeft [SMul R T] [FaithfulSMul R T] : FaithfulSMul (WithAbs v) T where
   eq_of_smul_eq_smul h := ofAbs_injective v <| FaithfulSMul.eq_of_smul_eq_smul h
 
-instance instSMulRight [SMul T R] : SMul T (WithAbs v) where
-  smul t x := toAbs v (t • x.ofAbs)
+instance instSMulRight [SMul T R] : SMul T (WithAbs v) := (equiv v).smul T
 
 theorem smul_right_def [SMul T R] (t : T) (x : WithAbs v) :
     t • x = toAbs v (t • x.ofAbs) := rfl
@@ -239,7 +238,8 @@ instance instModuleLeft [AddCommMonoid T] [Module R T] : Module (WithAbs v) T :=
 
 @[deprecated (since := "2026-01-29")] alias instModule_left := instModuleLeft
 
-instance instModuleRight [Semiring T] [Module T R] : Module T (WithAbs v) := (equiv v).module T
+instance instModuleRight [Semiring T] [Module T R] : Module T (WithAbs v) :=
+  fast_instance% (equiv v).module T
 
 @[deprecated (since := "2026-01-29")] alias instModule_right := instModuleRight
 
@@ -272,7 +272,8 @@ theorem algebraMap_left_injective (v : AbsoluteValue R S)
     (h : Function.Injective (algebraMap R T)) : Function.Injective (algebraMap (WithAbs v) T) :=
   h.comp (ofAbs_injective v)
 
-instance instAlgebraRight (v : AbsoluteValue T S) : Algebra R (WithAbs v) := (equiv v).algebra R
+instance instAlgebraRight (v : AbsoluteValue T S) : Algebra R (WithAbs v) :=
+  fast_instance% (equiv v).algebra R
 
 theorem algebraMap_right_apply {v : AbsoluteValue T S} (x : R) :
     algebraMap R (WithAbs v) x = toAbs v (algebraMap R T x):= rfl
