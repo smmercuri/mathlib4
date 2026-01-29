@@ -495,7 +495,7 @@ lemma valuation_def : (Valued.v : Valuation K⸨X⸩ ℤᵐ⁰) = (PowerSeries.i
 
 lemma valuation_coe_ratFunc (f : RatFunc K) :
     Valued.v (f : K⸨X⸩) = Valued.v f := by
-  simp [← valuation_eq_LaurentSeries_valuation]
+  simp [adicValued_apply, ← valuation_eq_LaurentSeries_valuation]
 
 theorem valuation_X_pow (s : ℕ) :
     Valued.v (((X : K⟦X⟧) : K⸨X⸩) ^ s) = exp (-(s : ℤ)) := by
@@ -886,7 +886,7 @@ lemma exists_ratFunc_eq_v (x : K⸨X⸩) : ∃ f : RatFunc K, Valued.v f = Value
     simp [hx]
   use RatFunc.X ^ (-log (Valued.v x))
   rw [zpow_neg, map_inv₀, map_zpow₀, v_def, valuation_X_eq_neg_one, ← exp_zsmul, ← exp_neg]
-  simp [-adicValued_apply, exp_log, hx]
+  simp [exp_log, hx]
 
 theorem inducing_coe : IsUniformInducing ((↑) : RatFunc K → K⸨X⸩) := by
   rw [isUniformInducing_iff, Filter.comap]
@@ -1054,7 +1054,7 @@ theorem tendsto_valuation (a : (idealX K).adicCompletion (RatFunc K)) :
     use Units.mk0 (Valued.v a) (by simp [ha])
     simp only [Units.val_mk0, v_def, Set.setOf_subset_setOf]
     rintro y val_y b rfl
-    simp [← Valuation.map_eq_of_sub_lt _ val_y]
+    rw [← Valuation.map_eq_of_sub_lt _ val_y, valuedAdicCompletion_eq_valuation']
 
 /- The extension of the `X`-adic valuation from `RatFunc K` up to its abstract completion coincides,
 modulo the isomorphism with `K⸨X⸩`, with the `X`-adic valuation on `K⸨X⸩`. -/

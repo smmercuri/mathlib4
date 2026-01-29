@@ -62,6 +62,10 @@ section Ring
 
 variable [Ring R] (v : Valuation R Γ₀)
 
+instance : Ring (WithVal v) := Equiv.ring {toFun := ofVal, invFun := toVal v}
+instance : Inhabited (WithVal v) := ⟨0⟩
+instance : Preorder (WithVal v) := letI := v.toPreorder; .lift ofVal
+
 lemma ofVal_toVal (x : R) : ofVal (toVal v x) = x := rfl
 @[simp] lemma toVal_ofVal (x : WithVal v) : toVal v (ofVal x) = x := rfl
 
@@ -82,17 +86,6 @@ lemma ofVal_bijective : Function.Bijective (ofVal (v := v)) :=
 
 lemma toVal_bijective : Function.Bijective (toVal v) :=
   ⟨toVal_injective v, toVal_surjective v⟩
-
-/-- The canonical type equivalence between `WithVal v` and `R`. -/
-def equivAux : WithVal v ≃ R where
-  toFun := ofVal
-  invFun := toVal v
-  left_inv := toVal_ofVal v
-  right_inv := ofVal_toVal v
-
-instance : Ring (WithVal v) := (equivAux v).ring
-instance : Inhabited (WithVal v) := ⟨0⟩
-instance : Preorder (WithVal v) := letI := v.toPreorder; .lift ofVal
 
 @[simp] lemma toVal_zero : toVal v 0 = 0 := rfl
 @[simp] lemma ofVal_zero : ofVal (0 : WithVal v) = 0 := rfl
@@ -155,22 +148,6 @@ theorem congr_trans {T : Type*} [Ring T] (u : Valuation T Γ₀) (f : R ≃+* S)
 @[simp] theorem congr_symm_apply (f : R ≃+* S) (x : WithVal w) :
     (congr v w f).symm x = toVal v (f.symm x.ofVal) := rfl
 
-@[simp]
-theorem ofVal_congr_apply {x : WithVal v} (f : R ≃+* S) :
-    (congr v w f x).ofVal = f x.ofVal := rfl
-
-@[simp]
-theorem ofVal_congr_symm_apply {x : WithVal w} (f : R ≃+* S) :
-    ((congr v w f).symm x).ofVal = f.symm x.ofVal := rfl
-
-@[simp]
-theorem congr_toVal_apply {x : R} (f : R ≃+* S) :
-    (congr v w f) (toVal v x) = toVal w (f x) := rfl
-
-@[simp]
-theorem congr_symm_toVal_apply {x : S} (f : R ≃+* S) :
-    (congr v w f).symm (toVal w x) = toVal v (f.symm x) := rfl
-
 /-- Canonical valuation on the `WithVal v` type synonym. -/
 def valuation : Valuation (WithVal v) Γ₀ := v.comap (equiv v)
 
@@ -190,7 +167,7 @@ section CommRing
 
 variable [CommRing R] (v : Valuation R Γ₀)
 
-instance : CommRing (WithVal v) := (equivAux v).commRing
+instance : CommRing (WithVal v) := fast_instance% (equiv v).commRing
 instance : ValuativeRel (WithVal v) := .ofValuation (valuation v)
 instance : (valuation v).Compatible := .ofValuation (valuation v)
 
@@ -206,20 +183,16 @@ instance instSMulLeft [SMul R S] : SMul (WithVal v) S where
 theorem smul_left_def [SMul R S] (x : WithVal v) (s : S) : x • s = ofVal x • s := rfl
 
 instance [SMul R S] [FaithfulSMul R S] : FaithfulSMul (WithVal v) S where
-  eq_of_smul_eq_smul {s₁ s₂} h := by
-    simp only [smul_left_def] at h
-    apply_fun ofVal using ofVal_injective _
-    simpa using FaithfulSMul.eq_of_smul_eq_smul h
+  eq_of_smul_eq_smul h := ofVal_injective v <| FaithfulSMul.eq_of_smul_eq_smul h
 
-instance instSMulRight [SMul S R] : SMul S (WithVal v) where
-  smul s x := toVal v (s • ofVal x)
+instance instSMulRight [SMul S R] : SMul S (WithVal v) := (equiv v).smul S
 
 theorem smul_right_def [SMul S R] (s : S) (x : WithVal v) : s • x = toVal v (s • ofVal x) := rfl
 
 instance [SMul S R] [FaithfulSMul S R] : FaithfulSMul S (WithVal v) where
-  eq_of_smul_eq_smul {s₁ s₂} h := by
+  eq_of_smul_eq_smul h := by
     simp only [smul_right_def, toVal.injEq] at h
-    simpa [smul_right_def] using FaithfulSMul.eq_of_smul_eq_smul fun r ↦ h (toVal v r)
+    exact FaithfulSMul.eq_of_smul_eq_smul fun r ↦ h (toVal v r)
 
 instance instIsScalarTowerLeft {P : Type*} [Ring R] [SMul S P] [SMul R S] [SMul R P]
     [IsScalarTower R S P] (v : Valuation R Γ₀) : IsScalarTower (WithVal v) S P where
@@ -239,7 +212,8 @@ instance instModuleLeft [AddCommMonoid S] [Module R S] : Module (WithVal v) S :=
 instance instFiniteLeft [AddCommMonoid S] [Module R S] [Module.Finite R S] :
     Module.Finite (WithVal v) S := .of_restrictScalars_finite R (WithVal v) S
 
-instance instModuleRight [Semiring S] [Module S R] : Module S (WithVal v) := (equiv v).module S
+instance instModuleRight [Semiring S] [Module S R] : Module S (WithVal v) :=
+  fast_instance% (equiv v).module S
 
 @[simp] theorem toVal_smul [SMul S R] (s : S) (r : R) : toVal v (s • r) = s • toVal v r := rfl
 @[simp] theorem ofVal_smul [SMul S R] (s : S) (x : WithVal v) : ofVal (s • x) = s • ofVal x := rfl
@@ -291,6 +265,8 @@ theorem algebraMap_right_apply (r : R) :
 theorem algebraMap_right_injective (h : Function.Injective (algebraMap R S)) :
     Function.Injective (algebraMap R (WithVal v)) := (toVal_injective v).comp h
 
+variable {R : Type*} [CommRing R] (v : Valuation R Γ₀) (w : Valuation S Γ₀) [Algebra R S]
+
 end right
 
 variable [CommSemiring R] [Ring S] [Algebra R S] (v : Valuation S Γ₀)
@@ -312,7 +288,7 @@ section Field
 
 variable [Field R] (v : Valuation R Γ₀)
 
-instance : Field (WithVal v) := (equivAux v).field
+instance : Field (WithVal v) := fast_instance% (equiv v).field
 instance [NumberField R] : NumberField (WithVal v) where
 
 @[simp] lemma toVal_div (x y : R) : toVal v (x / y) = toVal v x / toVal v y := rfl

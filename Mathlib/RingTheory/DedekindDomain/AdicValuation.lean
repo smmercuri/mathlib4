@@ -412,7 +412,6 @@ ring of integers, denoted `v.adicCompletionIntegers`. -/
 def adicValued : Valued K ℤᵐ⁰ :=
   Valued.mk' (v.valuation K)
 
-@[simp]
 theorem adicValued_apply {x : K} : v.adicValued.v x = v.valuation K x :=
   rfl
 
@@ -466,7 +465,6 @@ instance adicValued.uniformContinuousConstSMul :
   simp_rw [WithVal.smul_right_def, Algebra.smul_def]
   exact (Ring.uniformContinuousConstSMul (WithVal <| v.valuation K)).uniformContinuous_const_smul _
 
-example : Algebra S (WithVal (v.valuation K)) := WithVal.instAlgebraRight (R := S) (v.valuation K)
 open UniformSpace in
 instance : Algebra S (v.adicCompletion K) where
   toSMul := Completion.instSMul _ _
@@ -493,7 +491,7 @@ end Algebra
 
 theorem coe_algebraMap_mem (r : R) : ↑((algebraMap R K) r) ∈ adicCompletionIntegers K v := by
   rw [mem_adicCompletionIntegers, Valued.valuedCompletion_apply]
-  exact v.valuation_le_one _
+  simpa using v.valuation_le_one _
 
 instance : Algebra R (v.adicCompletionIntegers K) where
   smul r x :=
@@ -528,7 +526,8 @@ lemma algebraMap_adicCompletionIntegers_apply (r : R) :
 instance [FaithfulSMul R K] : FaithfulSMul R (v.adicCompletionIntegers K) := by
   rw [faithfulSMul_iff_algebraMap_injective]
   intro x y
-  simp [Subtype.ext_iff, (FaithfulSMul.algebraMap_injective R K).eq_iff]
+  rw [Subtype.ext_iff]
+  simp
 
 variable {R K} in
 open scoped algebraMap in -- to make the coercions from `R` fire
