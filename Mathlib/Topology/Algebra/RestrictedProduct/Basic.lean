@@ -503,8 +503,6 @@ lemma mulSingle_ne_one_iff {x : G i} : mulSingle A i x ≠ 1 ↔ x ≠ 1 :=
 
 end one
 
-section mul
-
 @[to_additive]
 lemma mulSingle_mul [∀ i, MulOneClass (G i)] [∀ i, OneMemClass (S i) (G i)]
     [∀ i, MulMemClass (S i) (G i)] (i : ι) (r s : G i) :
@@ -527,7 +525,29 @@ lemma single_mul [∀ i, MulZeroClass (G i)] [∀ i, ZeroMemClass (S i) (G i)]
   rcases eq_or_ne i j with rfl | hne; · simp
   simp [single_eq_of_ne' A _ hne]
 
-end mul
+@[to_additive]
+lemma mulSingle_inv [∀ i, Group (G i)] [∀ i, SubgroupClass (S i) (G i)]
+    (i : ι) (r : G i) :
+    mulSingle A i r⁻¹ = (mulSingle A i r)⁻¹ := by
+  ext; simp [Pi.mulSingle_inv]
+
+@[to_additive]
+lemma mulSingle_div [∀ i, Group (G i)] [∀ i, SubgroupClass (S i) (G i)]
+    (i : ι) (r s : G i) :
+    mulSingle A i (r / s) = mulSingle A i r / mulSingle A i s := by
+  ext; simp [Pi.mulSingle_div]
+
+@[to_additive]
+lemma mulSingle_pow [∀ i, Monoid (G i)] [∀ i, SubmonoidClass (S i) (G i)]
+    (i : ι) (r : G i) (n : ℕ) :
+    mulSingle A i (r ^ n) = mulSingle A i r ^ n := by
+  ext; simp [Pi.mulSingle_pow, RestrictedProduct.pow_apply]
+
+@[to_additive]
+lemma mulSingle_zpow [∀ i, Group (G i)] [∀ i, SubgroupClass (S i) (G i)]
+    (i : ι) (r : G i) (n : ℤ) :
+    mulSingle A i (r  ^ n) = mulSingle A i r ^ n := by
+  ext; simp [Pi.mulSingle_zpow, RestrictedProduct.zpow_apply]
 
 end single
 
