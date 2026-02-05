@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.NumberField.InfiniteAdeleRing
 public import Mathlib.RingTheory.DedekindDomain.FiniteAdeleRing
 public import Mathlib.NumberTheory.NumberField.ProductFormula
+public import Mathlib.Algebra.Group.Pi.Units
 
 /-!
 # The adele ring of a number field
@@ -94,46 +95,83 @@ variable {K : Type*} [Field K] [NumberField K]
 
 namespace FiniteAdeleRing
 
+open RingOfIntegers.HeightOneSpectrum
+
 -- not true! the product formula is meant to be for the ideles
-theorem mulSupport_finite {x : FiniteAdeleRing (𝓞 K) K} (hx : x ≠ 0) :
-    (Function.mulSupport fun v ↦ ‖x v‖).Finite := by
+theorem mulSupport_finite {x : (FiniteAdeleRing (𝓞 K) K)ˣ} :
+    (Function.mulSupport fun v ↦ ‖x.1 v‖).Finite := by
+  have := FiniteAdeleRing.isUnit_iff.1 x.isUnit
+  obtain h := this.2
+  simp at h
+  simp [instNormedFieldValuedAdicCompletion, Valued.toNormedField]
+  simp_rw [Valued.norm_def]
+  change (Function.mulSupport fun v ↦ (WithZeroMulInt.toNNReal (absNorm_ne_zero v) (Valued.v (x.1 v)) : ℝ)).Finite
+  convert h
+  ext v
+  simp
+  apply Iff.not
+  constructor
+  · intro h
+    rw [map_eq_one_iff] at h
+    exact h
+    exact WithZeroMulInt.toNNReal_strictMono (one_lt_absNorm_nnreal v) |>.injective
+  · rintro h
+    simp_rw [h]
+    simp
 
-  sorry
+-- not realy defined outside the units, gets junk value of 1
+instance : Norm (FiniteAdeleRing (𝓞 K) K)ˣ where norm x := ∏ᶠ v, ‖x.1 v‖
 
-instance : Norm (FiniteAdeleRing (𝓞 K) K) where
-  norm x := ∏ᶠ v, ‖x v‖
+theorem norm_def (x : (FiniteAdeleRing (𝓞 K) K)ˣ) : ‖x‖ = ∏ᶠ v, ‖x.1 v‖ := rfl
 
-theorem norm_def (x : FiniteAdeleRing (𝓞 K) K) : ‖x‖ = ∏ᶠ v, ‖x v‖ := rfl
+theorem coe_norm_apply (x : Kˣ) :
+    ‖(x : (FiniteAdeleRing (𝓞 K) K)ˣ)‖ = ∏ᶠ v, FinitePlace.mk v x.1 := rfl
 
-theorem coe_norm_apply (x : K) :
-    ‖algebraMap _ (FiniteAdeleRing (𝓞 K) K) x‖ = ∏ᶠ v, FinitePlace.mk v x := rfl
-
-theorem coe_norm_apply_eq_finprod_finitePlace (x : K) :
-    ‖algebraMap _ (FiniteAdeleRing (𝓞 K) K) x‖ = ∏ᶠ v : FinitePlace K, v x := by
+theorem coe_norm_apply_eq_finprod_finitePlace (x : Kˣ) :
+    ‖(x : (FiniteAdeleRing (𝓞 K) K)ˣ)‖ = ∏ᶠ v : FinitePlace K, v x := by
   rw [coe_norm_apply, ← finprod_comp FinitePlace.equivHeightOneSpectrum.invFun
     FinitePlace.equivHeightOneSpectrum.symm.bijective]
   exact finprod_congr fun _ ↦ rfl
 
-theorem coe_norm_eq_inv_abs_norm {x : K} (hx : x ≠ 0) :
-    ‖algebraMap _ (FiniteAdeleRing (𝓞 K) K) x‖ = |Algebra.norm ℚ x|⁻¹ := by
-  rw [← FinitePlace.prod_eq_inv_abs_norm hx, coe_norm_apply_eq_finprod_finitePlace]
+theorem coe_norm_eq_inv_abs_norm (x : Kˣ) :
+    ‖(x : (FiniteAdeleRing (𝓞 K) K)ˣ)‖ = |Algebra.norm ℚ x.1|⁻¹ := by
+  rw [← FinitePlace.prod_eq_inv_abs_norm x.ne_zero, coe_norm_apply_eq_finprod_finitePlace]
 
 end FiniteAdeleRing
 
 namespace AdeleRing
 
-instance : Norm (AdeleRing (𝓞 K) K) where norm x := ‖x.1‖ * ‖x.2‖
+theorem isUnit_iff {x : AdeleRing (𝓞 K) K} :
+    IsUnit x ↔ (∀ v, x.1 v ≠ 0) ∧ (∀ v, x.2 v ≠ 0) ∧
+      ∀ᶠ v in Filter.cofinite, Valued.v (x.2 v) = 1 := by
+  rw [Prod.isUnit_iff, Pi.isUnit_iff, FiniteAdeleRing.isUnit_iff]
+  simp_rw [isUnit_iff_ne_zero]
 
-theorem norm_def (x : AdeleRing (𝓞 K) K) : ‖x‖ = ‖x.1‖ * ‖x.2‖ := rfl
+instance : Norm (AdeleRing (𝓞 K) K)ˣ where norm x := ‖x.1.1‖ * ‖(MulEquiv.prodUnits x).2‖
 
-theorem norm_apply (x : AdeleRing (𝓞 K) K) :
-    ‖x‖ = (∏ v, ‖x.1 v‖ ^ v.mult) * ∏ᶠ v, ‖x.2 v‖ := rfl
+theorem norm_def (x : (AdeleRing (𝓞 K) K)ˣ) : ‖x‖ = ‖x.1.1‖ * ‖(MulEquiv.prodUnits x).2‖ := rfl
 
-theorem coe_norm_eq_one {x : K} (hx : x ≠ 0) :
-    ‖algebraMap _ (AdeleRing (𝓞 K) K) x‖ = 1 := by
-  rw [norm_def, algebraMap_fst_def, algebraMap_snd_def, InfiniteAdeleRing.coe_norm_eq_abs_norm,
-    FiniteAdeleRing.coe_norm_eq_inv_abs_norm hx]
-  simp [hx]
+theorem norm_apply (x : (AdeleRing (𝓞 K) K)ˣ) :
+    ‖x‖ = (∏ v, ‖x.1.1 v‖ ^ v.mult) * ∏ᶠ v, ‖(MulEquiv.prodUnits x).2.1 v‖ := rfl
+
+variable (K) in
+def unitEmbedding : Kˣ →* (AdeleRing (𝓞 K) K)ˣ := Units.map (algebraMap K (AdeleRing (𝓞 K) K))
+
+@[simp] theorem unitEmbedding_apply (k : Kˣ) :
+    unitEmbedding K k = algebraMap K (AdeleRing (𝓞 K) K) k := rfl
+
+theorem unitEmbedding_prodUnits_apply (k : Kˣ) :
+    (MulEquiv.prodUnits (unitEmbedding K k)).2 = k := rfl
+
+instance : Coe Kˣ (AdeleRing (𝓞 K) K)ˣ where
+  coe x := unitEmbedding K x
+
+theorem coe_norm_eq_one {x : Kˣ} :
+    ‖(x : (AdeleRing (𝓞 K) K)ˣ)‖ = 1 := by
+  rw [norm_def, unitEmbedding_apply, algebraMap_fst_def]
+  rw [unitEmbedding_prodUnits_apply, InfiniteAdeleRing.coe_norm_eq_abs_norm,
+    FiniteAdeleRing.coe_norm_eq_inv_abs_norm x]
+  simp
 
 end AdeleRing
 
