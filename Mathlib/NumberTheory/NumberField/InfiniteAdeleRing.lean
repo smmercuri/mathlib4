@@ -120,14 +120,14 @@ of the regular norm if the place is complex. -/
 instance [NumberField K] : Norm (InfiniteAdeleRing K) where
   norm x := ∏ v, ‖x v‖ ^ v.mult
 
-lemma norm_apply [NumberField K] (x : InfiniteAdeleRing K) :
+theorem norm_def [NumberField K] (x : InfiniteAdeleRing K) :
     ‖x‖ = ∏ v, ‖x v‖ ^ v.mult := rfl
 
+/-- The product formula for the infinite adele ring. This is the adelic version of
+`NumberField.InfinitePlace.prod_eq_abs_norm`. -/
 theorem coe_norm_eq_abs_norm [NumberField K] (x : K) :
     ‖algebraMap K (InfiniteAdeleRing K) x‖ = |Algebra.norm ℚ x| := by
-
-  simp only [norm_apply, algebraMap_apply, UniformSpace.Completion.norm_coe, Rat.cast_abs]
-  simpa [-Rat.cast_abs] using InfinitePlace.prod_eq_abs_norm x
+  simpa [-Rat.cast_abs, norm_def] using InfinitePlace.prod_eq_abs_norm x
 
 end InfiniteAdeleRing
 

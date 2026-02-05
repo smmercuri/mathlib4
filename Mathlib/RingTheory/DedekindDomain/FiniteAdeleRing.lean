@@ -151,4 +151,6 @@ end Topology
 
 end FiniteAdeleRing
 
+def FiniteIdeleGroup : Type _ := (FiniteAdeleRing R K)ˣ
+
 end IsDedekindDomain

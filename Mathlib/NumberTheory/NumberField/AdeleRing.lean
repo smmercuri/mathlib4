@@ -85,16 +85,25 @@ abbrev principalSubgroup : AddSubgroup (AdeleRing R K) := (algebraMap K _).range
 
 end AdeleRing
 
+def IdeleGroup (R K : Type) [CommRing R] [IsDedekindDomain R] [Field K] [Algebra R K]
+    [IsFractionRing R K] : Type := (AdeleRing R K)ˣ
+
 section norm
 
 variable {K : Type*} [Field K] [NumberField K]
 
 namespace FiniteAdeleRing
 
+-- not true! the product formula is meant to be for the ideles
+theorem mulSupport_finite {x : FiniteAdeleRing (𝓞 K) K} (hx : x ≠ 0) :
+    (Function.mulSupport fun v ↦ ‖x v‖).Finite := by
+
+  sorry
+
 instance : Norm (FiniteAdeleRing (𝓞 K) K) where
   norm x := ∏ᶠ v, ‖x v‖
 
-theorem norm_apply (x : FiniteAdeleRing (𝓞 K) K) : ‖x‖ = ∏ᶠ v, ‖x v‖ := rfl
+theorem norm_def (x : FiniteAdeleRing (𝓞 K) K) : ‖x‖ = ∏ᶠ v, ‖x v‖ := rfl
 
 theorem coe_norm_apply (x : K) :
     ‖algebraMap _ (FiniteAdeleRing (𝓞 K) K) x‖ = ∏ᶠ v, FinitePlace.mk v x := rfl
@@ -117,14 +126,14 @@ instance : Norm (AdeleRing (𝓞 K) K) where norm x := ‖x.1‖ * ‖x.2‖
 
 theorem norm_def (x : AdeleRing (𝓞 K) K) : ‖x‖ = ‖x.1‖ * ‖x.2‖ := rfl
 
-theorem norm_apply (x : AdeleRing (𝓞 K) K) : ‖x‖ = (∏ v, ‖x.1 v‖ ^ v.mult) * ∏ᶠ v, ‖x.2 v‖ := rfl
+theorem norm_apply (x : AdeleRing (𝓞 K) K) :
+    ‖x‖ = (∏ v, ‖x.1 v‖ ^ v.mult) * ∏ᶠ v, ‖x.2 v‖ := rfl
 
 theorem coe_norm_eq_one {x : K} (hx : x ≠ 0) :
     ‖algebraMap _ (AdeleRing (𝓞 K) K) x‖ = 1 := by
-  simp [norm_def, algebraMap_fst_def, InfiniteAdeleRing.norm_apply, algebraMap_snd_def,
-    FiniteAdeleRing.coe_norm_apply_eq_finprod_finitePlace]
-  rw [← prod_abs_eq_one hx]
-  rfl
+  rw [norm_def, algebraMap_fst_def, algebraMap_snd_def, InfiniteAdeleRing.coe_norm_eq_abs_norm,
+    FiniteAdeleRing.coe_norm_eq_inv_abs_norm hx]
+  simp [hx]
 
 end AdeleRing
 
