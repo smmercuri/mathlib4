@@ -114,6 +114,21 @@ theorem denseRange_algebraMap [NumberField K] : DenseRange <| algebraMap K (Infi
     (InfinitePlace.denseRange_algebraMap_pi K)
       (.piMap fun _ => UniformSpace.Completion.continuous_coe _)
 
+/-- The norm on the infinite adele ring is given by the product of the normalized norms
+across infinite places, which is the regular norm if the place is real, or the square
+of the regular norm if the place is complex. -/
+instance [NumberField K] : Norm (InfiniteAdeleRing K) where
+  norm x := ∏ v, ‖x v‖ ^ v.mult
+
+lemma norm_apply [NumberField K] (x : InfiniteAdeleRing K) :
+    ‖x‖ = ∏ v, ‖x v‖ ^ v.mult := rfl
+
+theorem coe_norm_eq_abs_norm [NumberField K] (x : K) :
+    ‖algebraMap K (InfiniteAdeleRing K) x‖ = |Algebra.norm ℚ x| := by
+
+  simp only [norm_apply, algebraMap_apply, UniformSpace.Completion.norm_coe, Rat.cast_abs]
+  simpa [-Rat.cast_abs] using InfinitePlace.prod_eq_abs_norm x
+
 end InfiniteAdeleRing
 
 end NumberField
