@@ -86,9 +86,6 @@ abbrev principalSubgroup : AddSubgroup (AdeleRing R K) := (algebraMap K _).range
 
 end AdeleRing
 
-def IdeleGroup (R K : Type) [CommRing R] [IsDedekindDomain R] [Field K] [Algebra R K]
-    [IsFractionRing R K] : Type := (AdeleRing R K)ˣ
-
 section norm
 
 variable {K : Type*} [Field K] [NumberField K]
@@ -97,29 +94,11 @@ namespace FiniteAdeleRing
 
 open RingOfIntegers.HeightOneSpectrum
 
--- not true! the product formula is meant to be for the ideles
-theorem mulSupport_finite {x : (FiniteAdeleRing (𝓞 K) K)ˣ} :
+theorem mulSupport_finite (x : (FiniteAdeleRing (𝓞 K) K)ˣ) :
     (Function.mulSupport fun v ↦ ‖x.1 v‖).Finite := by
-  have := FiniteAdeleRing.isUnit_iff.1 x.isUnit
-  obtain h := this.2
-  simp at h
-  simp [instNormedFieldValuedAdicCompletion, Valued.toNormedField]
-  simp_rw [Valued.norm_def]
-  change (Function.mulSupport fun v ↦ (WithZeroMulInt.toNNReal (absNorm_ne_zero v) (Valued.v (x.1 v)) : ℝ)).Finite
-  convert h
-  ext v
-  simp
-  apply Iff.not
-  constructor
-  · intro h
-    rw [map_eq_one_iff] at h
-    exact h
-    exact WithZeroMulInt.toNNReal_strictMono (one_lt_absNorm_nnreal v) |>.injective
-  · rintro h
-    simp_rw [h]
-    simp
+  simpa [Function.mulSupport, Valued.toNormedField.norm_eq_one_iff] using
+    FiniteAdeleRing.unitsEquiv_finite_valued_eq_one x
 
--- not realy defined outside the units, gets junk value of 1
 instance : Norm (FiniteAdeleRing (𝓞 K) K)ˣ where norm x := ∏ᶠ v, ‖x.1 v‖
 
 theorem norm_def (x : (FiniteAdeleRing (𝓞 K) K)ˣ) : ‖x‖ = ∏ᶠ v, ‖x.1 v‖ := rfl
@@ -168,9 +147,8 @@ instance : Coe Kˣ (AdeleRing (𝓞 K) K)ˣ where
 
 theorem coe_norm_eq_one {x : Kˣ} :
     ‖(x : (AdeleRing (𝓞 K) K)ˣ)‖ = 1 := by
-  rw [norm_def, unitEmbedding_apply, algebraMap_fst_def]
-  rw [unitEmbedding_prodUnits_apply, InfiniteAdeleRing.coe_norm_eq_abs_norm,
-    FiniteAdeleRing.coe_norm_eq_inv_abs_norm x]
+  rw [norm_def, unitEmbedding_apply, algebraMap_fst_def, unitEmbedding_prodUnits_apply,
+    InfiniteAdeleRing.coe_norm_eq_abs_norm, FiniteAdeleRing.coe_norm_eq_inv_abs_norm]
   simp
 
 end AdeleRing

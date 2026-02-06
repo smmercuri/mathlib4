@@ -10,6 +10,8 @@ public import Mathlib.Algebra.Ring.Subring.Defs
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import Mathlib.Order.Filter.Cofinite  -- shake: keep (used in notation only)
 public import Mathlib.Algebra.Module.Pi
+public import Mathlib.Algebra.Group.Submonoid.Units
+public import Mathlib.Algebra.Group.Pi.Units
 
 /-!
 # Restricted products of sets, groups and rings
@@ -451,5 +453,87 @@ lemma mapAlongRingHom_apply (x : Πʳ i, [R₁ i, B₁ i]_[𝓕₁]) (j : ι₂)
 end ring
 
 end map
+
+section units
+
+variable {ι : Type*} {R : ι → Type*} [∀ i, Monoid (R i)]
+variable {S : ι → Type*}
+variable [Π i, SetLike (S i) (R i)]
+variable [∀ (i : ι), SubmonoidClass (S i) (R i)]
+variable {B : Π i, S i}
+variable {𝓕 : Filter ι}
+
+theorem isUnit_of_isUnit_eventually_isUnit {x : Πʳ i, [R i, B i]_[𝓕]} (hx : ∀ i, IsUnit (x i))
+    (hx' : ∀ᶠ i in 𝓕, ∃ (h : x i ∈ B i), IsUnit (⟨x i, h⟩ : B i)) :
+    IsUnit x := by
+  classical
+  rw [← Pi.isUnit_iff, isUnit_iff_exists] at hx
+  simp_rw [Filter.eventually_iff_exists_mem, isUnit_iff_exists] at hx'
+  choose b hb hb' using hx
+  choose v hv hxv c hc using hx'
+  rw [isUnit_iff_exists]
+  use .mk (fun i ↦ if hi : i ∈ v then (c i hi) else b i)
+    (Filter.eventually_iff_exists_mem.2 ⟨v, hv, fun i hi ↦ by simp [hi]⟩)
+  simp_rw [RestrictedProduct.ext_iff, ← forall_and, mul_apply, mk_apply, mul_dite]
+  intro i
+  split_ifs
+  · exact ⟨Subtype.mk.injEq _ _ _ _ ▸ (hc i ‹_›).1, Subtype.mk.injEq _ _ _ _ ▸ (hc i ‹_›).2⟩
+  · simpa using ⟨funext_iff.1 hb i, funext_iff.1 hb' i⟩
+
+@[simp]
+theorem _root_.SubmonoidClass.mk_eq_one {M : Type*} [MulOneClass M] {S : Type*} [SetLike S M]
+    [SubmonoidClass S M] (B : S) {a : M} {ha : a ∈ B} : (⟨a, ha⟩ : B) = 1 ↔ a = 1 := by
+  simp [← SetLike.coe_eq_coe]
+
+theorem isUnit_eventualy_isUnit_of_isUnit {x : Πʳ i, [R i, B i]_[𝓕]} (hx : IsUnit x) :
+    (∀ i, IsUnit (x i)) ∧ ∀ᶠ i in 𝓕, ∃ (h : x i ∈ B i), IsUnit (⟨x i, h⟩ : B i) := by
+  simp_rw [isUnit_iff_exists, RestrictedProduct.ext_iff, ← forall_and] at hx
+  simp_rw [isUnit_iff_exists]
+  choose b hb using hx
+  exact ⟨Classical.skolem.symm.1 ⟨b, hb⟩, by filter_upwards [x.2, b.2] using
+    fun i hx hb ↦ ⟨hx, ⟨b i, hb⟩, by simp_all⟩⟩
+
+theorem isUnit_iff {x : Πʳ i, [R i, B i]_[𝓕]} :
+    IsUnit x ↔ (∀ i, IsUnit (x i)) ∧ ∀ᶠ i in 𝓕, ∃ (h : x i ∈ B i), IsUnit (⟨x i, h⟩ : B i)  :=
+  ⟨isUnit_eventualy_isUnit_of_isUnit, fun h ↦ isUnit_of_isUnit_eventually_isUnit h.1 h.2⟩
+
+def coeUnits : Πʳ i, [R i, B i]_[𝓕]ˣ →* (i : ι) → (R i)ˣ :=
+  MulEquiv.piUnits.toMonoidHom.comp <| Units.map coeMonoidHom
+
+@[simp] lemma coeUnits_apply (x : Πʳ i, [R i, B i]_[𝓕]ˣ) (i : ι) : (coeUnits x i).1 = x.1 i := rfl
+
+variable (i : ι)
+variable {B : Π i, Submonoid (R i)}
+
+theorem coeUnits_eventually_mem_units (x : Πʳ i, [R i, B i]_[𝓕]ˣ) :
+    ∀ᶠ i in 𝓕, coeUnits x i ∈ (B i).units := by
+  filter_upwards [(isUnit_iff.1 x.isUnit).2] using fun i hi ↦ by
+    obtain ⟨h, hi⟩ := hi
+    convert ((B i).unitsEquivIsUnitSubmonoid.symm ⟨_, hi⟩).2
+    apply_fun Units.val using Units.val_injective
+    rfl
+
+def mkUnit (x : Π i, (R i)ˣ) (hx : ∀ᶠ i in 𝓕, x i ∈ (B i).units) :
+     Πʳ i, [R i, B i]_[𝓕]ˣ where
+  val := ⟨fun i ↦ (x i).1, by filter_upwards [hx] using fun i hi ↦ (B i).val_mem_of_mem_units hi⟩
+  inv := ⟨fun i ↦ (x i)⁻¹.1, by filter_upwards [hx] using
+    fun i hi ↦ (B i).inv_val_mem_of_mem_units hi⟩
+  val_inv := by ext; simp
+  inv_val := by ext; simp
+
+def unitsEquiv : Πʳ i, [R i, B i]_[𝓕]ˣ ≃* Πʳ i, [(R i)ˣ, (B i).units]_[𝓕] where
+  toFun x := ⟨coeUnits x, coeUnits_eventually_mem_units x⟩
+  invFun y := mkUnit y.1 y.2
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_mul' _ _ := rfl
+
+@[simp] lemma unitsEquiv_apply (i : ι) (x : Πʳ i, [R i, B i]_[𝓕]ˣ) :
+    (unitsEquiv x i) = x.1 i := rfl
+
+@[simp] lemma coe_unitsEquiv_apply (x : Πʳ i, [R i, B i]_[𝓕]ˣ) (i : ι) :
+    (unitsEquiv x).1 i = unitsEquiv x i := rfl
+
+end units
 
 end RestrictedProduct

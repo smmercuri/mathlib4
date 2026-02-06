@@ -155,96 +155,18 @@ end Topology
 
 variable {R K}
 
-def denDivisors (a : FiniteAdeleRing R K) : Set (HeightOneSpectrum R) :=
-    {v | a v ∉ v.adicCompletionIntegers K}
-
-theorem denDivisors_finite (a : FiniteAdeleRing R K) : a.denDivisors.Finite := by
-  simpa using a.2
-
-theorem notMem_adicCompletionIntegers_at_denDivisors (a : FiniteAdeleRing R K)
-      (v : HeightOneSpectrum R) (hv : v ∈ a.denDivisors) :
-    a v ∉ v.adicCompletionIntegers K := hv
-
-theorem _root_.Set.diff_nonempty_of_encard_lt_encard {α : Type*} {s t : Set α}
-    (h : s.encard < t.encard) : (t \ s).Nonempty := by
-  simp [Set.nonempty_iff_ne_empty]
-  intro h
-  sorry
-
-theorem isUnit_iff_valued_eq_one {v : HeightOneSpectrum R} {a : v.adicCompletionIntegers K} :
-    IsUnit a ↔ Valued.v a.1 = 1 := by
-  rw [Valuation.Integers.isUnit_iff_valuation_eq_one (F := v.adicCompletion K) (Γ₀ := WithZero (Multiplicative ℤ))]
-  exact .rfl
-  apply Valuation.Integers.mk
-  · exact FaithfulSMul.algebraMap_injective (↥(adicCompletionIntegers K v)) (adicCompletion K v)
-  · simp [mem_adicCompletionIntegers]
-  · simp [mem_adicCompletionIntegers]
-
-theorem nonzero_of_isUnit {a : FiniteAdeleRing R K}
-    (ha : IsUnit a) :
-    ∀ v, a v ≠ 0 := by
-  contrapose! ha
-  simp [isUnit_iff_exists_inv]
-  intro b
-  rw [RestrictedProduct.ext_iff]
-  simp
-  obtain ⟨v, hv⟩ := ha
-  use v
-  change a v * b v ≠ _
-  simp [hv]
-
-theorem isUnit_cofinite_of_isUnit {a : FiniteAdeleRing R K} (ha : IsUnit a) :
-    ∀ᶠ v in Filter.cofinite, Valued.v (a v) = 1 := by
-  simp
-  rw [isUnit_iff_exists_inv] at ha
-  obtain ⟨b, hb⟩ := ha
-  rw [RestrictedProduct.ext_iff] at hb
-  contrapose! hb
-  have : (a.denDivisors ∪ b.denDivisors).encard < {v | Valued.v (a v) ≠ 1}.encard := by
-    simp [Set.encard_eq_top hb, a.denDivisors_finite, b.denDivisors_finite]
-  obtain ⟨v₀, hv₀⟩ := Set.diff_nonempty_of_encard_lt_encard this
-  use v₀
-  simp at hv₀
-  let a' : v₀.adicCompletionIntegers K := ⟨a v₀, by simpa [denDivisors] using hv₀.2.1⟩
-  let b' : v₀.adicCompletionIntegers K := ⟨b v₀, by simpa [denDivisors] using hv₀.2.2⟩
-  simp
-  change a v₀ * b v₀ ≠ 1
-  have : ¬IsUnit a' := by rw [isUnit_iff_valued_eq_one]; exact hv₀.1
-  rw [isUnit_iff_exists_inv] at this
-  simp at this
-  have := this (b v₀) (by simpa [denDivisors] using hv₀.2.2)
-  simp [a'] at this
-  have hi : Function.Injective (algebraMap (v₀.adicCompletionIntegers K) (v₀.adicCompletion K)) := by
-    apply FaithfulSMul.algebraMap_injective
-  rw [← hi.eq_iff.not] at this
-  simp_all
-
-theorem isUnit_of_isUnit_cofinite {a : FiniteAdeleRing R K} (h : ∀ v, a v ≠ 0)
-      (ha : ∀ᶠ v in Filter.cofinite, Valued.v (a v) = 1) :
-    IsUnit a := by
-  rw [isUnit_iff_exists_inv]
-  simp at ha
-  let S := {v | Valued.v (a v) ≠ 1}
-  use .mk (fun v ↦ (a v)⁻¹) (by
-    simp
-    apply Set.Finite.subset ha
-    simp
-    intro v hav
-    contrapose! hav
-    let a' : v.adicCompletionIntegers K := ⟨a v, by simpa [mem_adicCompletionIntegers] using hav.le⟩
-    have : Valued.v a'.1 = 1 := by simpa
-    change Valued.v a'.1⁻¹ ≤ 1
-    rw [map_inv₀, this]
-    simp)
-  ext v
-  change a v * _ = 1
-  simp [field, h v]
-
-
 theorem isUnit_iff {a : FiniteAdeleRing R K} :
     IsUnit a ↔ (∀ v, a v ≠ 0) ∧ ∀ᶠ v in Filter.cofinite, Valued.v (a v) = 1 := by
-  refine ⟨fun h ↦ ⟨nonzero_of_isUnit h, isUnit_cofinite_of_isUnit h⟩,
-    fun h ↦ isUnit_of_isUnit_cofinite h.1 h.2⟩
+  rw [RestrictedProduct.isUnit_iff]
+  simp_rw [isUnit_iff_ne_zero, isUnit_iff_valued_eq_one, exists_prop, Filter.eventually_cofinite,
+    not_and_or, Set.setOf_or]
+  simpa using fun _ _ ↦ a.2
+
+theorem unitsEquiv_finite_valued_eq_one (a : (FiniteAdeleRing R K)ˣ) :
+    ∀ᶠ v in Filter.cofinite, Valued.v ((RestrictedProduct.unitsEquiv a v)).1 = 1 := by
+  filter_upwards [(RestrictedProduct.unitsEquiv a).2]
+  simp only [SetLike.mem_coe, mem_units_iff_valued_eq_one, RestrictedProduct.coe_unitsEquiv_apply]
+  simp
 
 variable (R K) in
 def unitEmbedding : Kˣ →* (FiniteAdeleRing R K)ˣ := Units.map (algebraMap K (FiniteAdeleRing R K))
