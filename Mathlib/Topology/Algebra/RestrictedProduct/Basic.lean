@@ -603,18 +603,13 @@ theorem isUnit_of_isUnit_eventually_isUnit {x : Πʳ i, [R i, B i]_[𝓕]} (hx :
   · exact ⟨Subtype.mk.injEq _ _ _ _ ▸ (hc i ‹_›).1, Subtype.mk.injEq _ _ _ _ ▸ (hc i ‹_›).2⟩
   · simpa using ⟨funext_iff.1 hb i, funext_iff.1 hb' i⟩
 
-@[simp]
-theorem _root_.SubmonoidClass.mk_eq_one {M : Type*} [MulOneClass M] {S : Type*} [SetLike S M]
-    [SubmonoidClass S M] (B : S) {a : M} {ha : a ∈ B} : (⟨a, ha⟩ : B) = 1 ↔ a = 1 := by
-  simp [← SetLike.coe_eq_coe]
-
 theorem isUnit_eventualy_isUnit_of_isUnit {x : Πʳ i, [R i, B i]_[𝓕]} (hx : IsUnit x) :
     (∀ i, IsUnit (x i)) ∧ ∀ᶠ i in 𝓕, ∃ (h : x i ∈ B i), IsUnit (⟨x i, h⟩ : B i) := by
   simp_rw [isUnit_iff_exists, RestrictedProduct.ext_iff, ← forall_and] at hx
   simp_rw [isUnit_iff_exists]
   choose b hb using hx
   exact ⟨Classical.skolem.symm.1 ⟨b, hb⟩, by filter_upwards [x.2, b.2] using
-    fun i hx hb ↦ ⟨hx, ⟨b i, hb⟩, by simp_all⟩⟩
+    fun i hx hb ↦ ⟨hx, ⟨b i, hb⟩, by simp_all [← SetLike.coe_eq_coe]⟩⟩
 
 theorem isUnit_iff {x : Πʳ i, [R i, B i]_[𝓕]} :
     IsUnit x ↔ (∀ i, IsUnit (x i)) ∧ ∀ᶠ i in 𝓕, ∃ (h : x i ∈ B i), IsUnit (⟨x i, h⟩ : B i)  :=
