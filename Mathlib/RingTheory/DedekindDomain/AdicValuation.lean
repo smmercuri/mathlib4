@@ -600,17 +600,12 @@ variable {K v}
 
 theorem adicCompletionIntegers.isUnit_iff_valued_eq_one {a : v.adicCompletionIntegers K} :
     IsUnit a ↔ Valued.v a.1 = 1 := by
-  rw [Valuation.Integers.isUnit_iff_valuation_eq_one (integers K v)]
-  exact .rfl
+  simp [Valuation.Integers.isUnit_iff_valuation_eq_one (integers K v)]
 
 theorem adicCompletionIntegers.mem_units_iff_valued_eq_one {a : (v.adicCompletion K)ˣ} :
-    a ∈ (v.adicCompletionIntegers K).units ↔ Valued.v a.1 = 1 := by
-  refine ⟨fun h ↦ isUnit_iff_valued_eq_one.1 (Submonoid.unitsEquivIsUnitSubmonoid _ ⟨_, h⟩).2, ?_⟩
-  intro h
-  have ha : a.1 ∈ v.adicCompletionIntegers K := h.le
-  rw [← Subtype.coe_mk _ ha, ← isUnit_iff_valued_eq_one] at h
-  have : a = ((v.adicCompletionIntegers K).unitsEquivIsUnitSubmonoid.symm ⟨_, h⟩).1 := by ext; rfl
-  exact this ▸ ((v.adicCompletionIntegers K).unitsEquivIsUnitSubmonoid.symm ⟨_, h⟩).2
+    a ∈ (v.adicCompletionIntegers K).units ↔ Valued.v a.1 = 1 :=
+  ⟨fun h ↦ isUnit_iff_valued_eq_one.1 (Submonoid.unitsEquivIsUnitSubmonoid _ ⟨_, h⟩).2,
+    fun h ↦ ⟨h.le, by simp [mem_adicCompletionIntegers, inv_le_one_iff₀, h.symm.le]⟩⟩
 
 section AbsoluteValue
 
